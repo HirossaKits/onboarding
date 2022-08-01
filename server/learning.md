@@ -27,3 +27,28 @@ Write schema and run below command
 ```shell
 go generate ./ent
 ```
+
+```mermaid
+erDiagram
+
+user ||--o{ todo : user_id
+
+user {
+  number id
+  string email
+  string password
+  string name
+  datetime updated_at
+  datetime created_at
+}
+
+todo {
+  number id
+  string user_id
+  string title
+  string content
+  datetime updated_at
+  datetime created_at
+}
+
+```
