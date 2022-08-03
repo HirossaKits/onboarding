@@ -26,8 +26,7 @@ type TodoQuery struct {
 	fields     []string
 	predicates []predicate.Todo
 	// eager-loading edges.
-	withOwner *UserQuery
-	withFKs   bool
+	withUser *UserQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -64,8 +63,8 @@ func (tq *TodoQuery) Order(o ...OrderFunc) *TodoQuery {
 	return tq
 }
 
-// QueryOwner chains the current query on the "owner" edge.
-func (tq *TodoQuery) QueryOwner() *UserQuery {
+// QueryUser chains the current query on the "user" edge.
+func (tq *TodoQuery) QueryUser() *UserQuery {
 	query := &UserQuery{config: tq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := tq.prepareQuery(ctx); err != nil {
@@ -78,7 +77,7 @@ func (tq *TodoQuery) QueryOwner() *UserQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(todo.Table, todo.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, todo.OwnerTable, todo.OwnerColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, todo.UserTable, todo.UserColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tq.driver.Dialect(), step)
 		return fromU, nil
@@ -267,7 +266,7 @@ func (tq *TodoQuery) Clone() *TodoQuery {
 		offset:     tq.offset,
 		order:      append([]OrderFunc{}, tq.order...),
 		predicates: append([]predicate.Todo{}, tq.predicates...),
-		withOwner:  tq.withOwner.Clone(),
+		withUser:   tq.withUser.Clone(),
 		// clone intermediate query.
 		sql:    tq.sql.Clone(),
 		path:   tq.path,
@@ -275,14 +274,14 @@ func (tq *TodoQuery) Clone() *TodoQuery {
 	}
 }
 
-// WithOwner tells the query-builder to eager-load the nodes that are connected to
-// the "owner" edge. The optional arguments are used to configure the query builder of the edge.
-func (tq *TodoQuery) WithOwner(opts ...func(*UserQuery)) *TodoQuery {
+// WithUser tells the query-builder to eager-load the nodes that are connected to
+// the "user" edge. The optional arguments are used to configure the query builder of the edge.
+func (tq *TodoQuery) WithUser(opts ...func(*UserQuery)) *TodoQuery {
 	query := &UserQuery{config: tq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	tq.withOwner = query
+	tq.withUser = query
 	return tq
 }
 
@@ -292,7 +291,7 @@ func (tq *TodoQuery) WithOwner(opts ...func(*UserQuery)) *TodoQuery {
 // Example:
 //
 //	var v []struct {
-//		UserID string `json:"user_id,omitempty"`
+//		UserID uuid.UUID `json:"user_id,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -321,7 +320,7 @@ func (tq *TodoQuery) GroupBy(field string, fields ...string) *TodoGroupBy {
 // Example:
 //
 //	var v []struct {
-//		UserID string `json:"user_id,omitempty"`
+//		UserID uuid.UUID `json:"user_id,omitempty"`
 //	}
 //
 //	client.Todo.Query().
@@ -355,18 +354,11 @@ func (tq *TodoQuery) prepareQuery(ctx context.Context) error {
 func (tq *TodoQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Todo, error) {
 	var (
 		nodes       = []*Todo{}
-		withFKs     = tq.withFKs
 		_spec       = tq.querySpec()
 		loadedTypes = [1]bool{
-			tq.withOwner != nil,
+			tq.withUser != nil,
 		}
 	)
-	if tq.withOwner != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, todo.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
 		return (*Todo).scanValues(nil, columns)
 	}
@@ -386,14 +378,11 @@ func (tq *TodoQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Todo, e
 		return nodes, nil
 	}
 
-	if query := tq.withOwner; query != nil {
+	if query := tq.withUser; query != nil {
 		ids := make([]uuid.UUID, 0, len(nodes))
 		nodeids := make(map[uuid.UUID][]*Todo)
 		for i := range nodes {
-			if nodes[i].user_user_todo == nil {
-				continue
-			}
-			fk := *nodes[i].user_user_todo
+			fk := nodes[i].UserID
 			if _, ok := nodeids[fk]; !ok {
 				ids = append(ids, fk)
 			}
@@ -407,10 +396,10 @@ func (tq *TodoQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Todo, e
 		for _, n := range neighbors {
 			nodes, ok := nodeids[n.ID]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected foreign-key "user_user_todo" returned %v`, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "user_id" returned %v`, n.ID)
 			}
 			for i := range nodes {
-				nodes[i].Edges.Owner = n
+				nodes[i].Edges.User = n
 			}
 		}
 	}

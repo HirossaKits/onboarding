@@ -11,11 +11,11 @@ var (
 	// TodosColumns holds the columns for the "todos" table.
 	TodosColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "user_id", Type: field.TypeString, Size: 2147483647},
 		{Name: "title", Type: field.TypeString, Size: 2147483647},
 		{Name: "content", Type: field.TypeString, Size: 2147483647},
+		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "created_at", Type: field.TypeTime},
-		{Name: "user_user_todo", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeUUID},
 	}
 	// TodosTable holds the schema information for the "todos" table.
 	TodosTable = &schema.Table{
@@ -24,7 +24,7 @@ var (
 		PrimaryKey: []*schema.Column{TodosColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "todos_users_user_todo",
+				Symbol:     "todos_users_user_todos",
 				Columns:    []*schema.Column{TodosColumns[5]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
@@ -44,7 +44,9 @@ var (
 		{Name: "email", Type: field.TypeString},
 		{Name: "password", Type: field.TypeString},
 		{Name: "name", Type: field.TypeString},
-		{Name: "nickname", Type: field.TypeString, Unique: true},
+		{Name: "content", Type: field.TypeString, Size: 2147483647},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{

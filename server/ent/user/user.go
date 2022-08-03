@@ -3,6 +3,8 @@
 package user
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 )
 
@@ -17,19 +19,23 @@ const (
 	FieldPassword = "password"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
-	// FieldNickname holds the string denoting the nickname field in the database.
-	FieldNickname = "nickname"
-	// EdgeUserTodo holds the string denoting the user_todo edge name in mutations.
-	EdgeUserTodo = "user_todo"
+	// FieldContent holds the string denoting the content field in the database.
+	FieldContent = "content"
+	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
+	FieldUpdatedAt = "updated_at"
+	// FieldCreatedAt holds the string denoting the created_at field in the database.
+	FieldCreatedAt = "created_at"
+	// EdgeUserTodos holds the string denoting the user_todos edge name in mutations.
+	EdgeUserTodos = "user_todos"
 	// Table holds the table name of the user in the database.
 	Table = "users"
-	// UserTodoTable is the table that holds the user_todo relation/edge.
-	UserTodoTable = "todos"
-	// UserTodoInverseTable is the table name for the Todo entity.
+	// UserTodosTable is the table that holds the user_todos relation/edge.
+	UserTodosTable = "todos"
+	// UserTodosInverseTable is the table name for the Todo entity.
 	// It exists in this package in order to avoid circular dependency with the "todo" package.
-	UserTodoInverseTable = "todos"
-	// UserTodoColumn is the table column denoting the user_todo relation/edge.
-	UserTodoColumn = "user_user_todo"
+	UserTodosInverseTable = "todos"
+	// UserTodosColumn is the table column denoting the user_todos relation/edge.
+	UserTodosColumn = "user_id"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -38,7 +44,9 @@ var Columns = []string{
 	FieldEmail,
 	FieldPassword,
 	FieldName,
-	FieldNickname,
+	FieldContent,
+	FieldUpdatedAt,
+	FieldCreatedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -52,6 +60,12 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// ContentValidator is a validator for the "content" field. It is called by the builders before save.
+	ContentValidator func(string) error
+	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
+	DefaultUpdatedAt func() time.Time
+	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
+	DefaultCreatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )

@@ -9,8 +9,11 @@ import (
 	"go-chi-api/ent"
 	"go-chi-api/ent/migrate"
 
+	"go-chi-api/routers"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-sql-driver/mysql"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -18,13 +21,19 @@ func main() {
 	// logging
 	entOptions := []ent.Option{ent.Debug()}
 
+	// load env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("failed loading env file: %v", err)
+	}
+
 	// connect db
 	mc := mysql.Config{
 		User:                 os.Getenv("MYSQL_USER"),
 		Passwd:               os.Getenv("MYSQL_PASSWORD"),
 		Net:                  "tcp",
-		Addr:                 "localhost" + ":" + "3306",
-		DBName:               "db",
+		Addr:                 "localhost" + ":" + os.Getenv("MYSQL_PORT"),
+		DBName:               os.Getenv("MYSQL_DBNAME"),
 		AllowNativePasswords: true,
 		ParseTime:            true,
 	}
@@ -50,7 +59,7 @@ func main() {
 
 	// start server
 	router := chi.NewRouter()
-	UserRouter(&router)
+	routers.UserRouter(router)
 	err = http.ListenAndServe(":8080", router)
 	if err != nil {
 		log.Fatalf("failed starting server: %v", err)

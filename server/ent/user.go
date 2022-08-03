@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go-chi-api/ent/user"
 	"strings"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
@@ -22,8 +23,12 @@ type User struct {
 	Password string `json:"password,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
-	// Nickname holds the value of the "nickname" field.
-	Nickname string `json:"nickname,omitempty"`
+	// Content holds the value of the "content" field.
+	Content string `json:"content,omitempty"`
+	// UpdatedAt holds the value of the "updated_at" field.
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges UserEdges `json:"edges"`
@@ -31,20 +36,20 @@ type User struct {
 
 // UserEdges holds the relations/edges for other nodes in the graph.
 type UserEdges struct {
-	// UserTodo holds the value of the user_todo edge.
-	UserTodo []*Todo `json:"user_todo,omitempty"`
+	// UserTodos holds the value of the user_todos edge.
+	UserTodos []*Todo `json:"user_todos,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
-// UserTodoOrErr returns the UserTodo value or an error if the edge
+// UserTodosOrErr returns the UserTodos value or an error if the edge
 // was not loaded in eager-loading.
-func (e UserEdges) UserTodoOrErr() ([]*Todo, error) {
+func (e UserEdges) UserTodosOrErr() ([]*Todo, error) {
 	if e.loadedTypes[0] {
-		return e.UserTodo, nil
+		return e.UserTodos, nil
 	}
-	return nil, &NotLoadedError{edge: "user_todo"}
+	return nil, &NotLoadedError{edge: "user_todos"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -52,8 +57,10 @@ func (*User) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case user.FieldEmail, user.FieldPassword, user.FieldName, user.FieldNickname:
+		case user.FieldEmail, user.FieldPassword, user.FieldName, user.FieldContent:
 			values[i] = new(sql.NullString)
+		case user.FieldUpdatedAt, user.FieldCreatedAt:
+			values[i] = new(sql.NullTime)
 		case user.FieldID:
 			values[i] = new(uuid.UUID)
 		default:
@@ -95,20 +102,32 @@ func (u *User) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				u.Name = value.String
 			}
-		case user.FieldNickname:
+		case user.FieldContent:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field nickname", values[i])
+				return fmt.Errorf("unexpected type %T for field content", values[i])
 			} else if value.Valid {
-				u.Nickname = value.String
+				u.Content = value.String
+			}
+		case user.FieldUpdatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
+			} else if value.Valid {
+				u.UpdatedAt = value.Time
+			}
+		case user.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
+			} else if value.Valid {
+				u.CreatedAt = value.Time
 			}
 		}
 	}
 	return nil
 }
 
-// QueryUserTodo queries the "user_todo" edge of the User entity.
-func (u *User) QueryUserTodo() *TodoQuery {
-	return (&UserClient{config: u.config}).QueryUserTodo(u)
+// QueryUserTodos queries the "user_todos" edge of the User entity.
+func (u *User) QueryUserTodos() *TodoQuery {
+	return (&UserClient{config: u.config}).QueryUserTodos(u)
 }
 
 // Update returns a builder for updating this User.
@@ -143,8 +162,14 @@ func (u *User) String() string {
 	builder.WriteString("name=")
 	builder.WriteString(u.Name)
 	builder.WriteString(", ")
-	builder.WriteString("nickname=")
-	builder.WriteString(u.Nickname)
+	builder.WriteString("content=")
+	builder.WriteString(u.Content)
+	builder.WriteString(", ")
+	builder.WriteString("updated_at=")
+	builder.WriteString(u.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("created_at=")
+	builder.WriteString(u.CreatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

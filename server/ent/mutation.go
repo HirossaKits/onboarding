@@ -36,13 +36,13 @@ type TodoMutation struct {
 	op            Op
 	typ           string
 	id            *uuid.UUID
-	user_id       *string
 	title         *string
 	content       *string
+	updated_at    *time.Time
 	created_at    *time.Time
 	clearedFields map[string]struct{}
-	owner         *uuid.UUID
-	clearedowner  bool
+	user          *uuid.UUID
+	cleareduser   bool
 	done          bool
 	oldValue      func(context.Context) (*Todo, error)
 	predicates    []predicate.Todo
@@ -153,13 +153,13 @@ func (m *TodoMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 }
 
 // SetUserID sets the "user_id" field.
-func (m *TodoMutation) SetUserID(s string) {
-	m.user_id = &s
+func (m *TodoMutation) SetUserID(u uuid.UUID) {
+	m.user = &u
 }
 
 // UserID returns the value of the "user_id" field in the mutation.
-func (m *TodoMutation) UserID() (r string, exists bool) {
-	v := m.user_id
+func (m *TodoMutation) UserID() (r uuid.UUID, exists bool) {
+	v := m.user
 	if v == nil {
 		return
 	}
@@ -169,7 +169,7 @@ func (m *TodoMutation) UserID() (r string, exists bool) {
 // OldUserID returns the old "user_id" field's value of the Todo entity.
 // If the Todo object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TodoMutation) OldUserID(ctx context.Context) (v string, err error) {
+func (m *TodoMutation) OldUserID(ctx context.Context) (v uuid.UUID, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
 	}
@@ -185,7 +185,7 @@ func (m *TodoMutation) OldUserID(ctx context.Context) (v string, err error) {
 
 // ResetUserID resets all changes to the "user_id" field.
 func (m *TodoMutation) ResetUserID() {
-	m.user_id = nil
+	m.user = nil
 }
 
 // SetTitle sets the "title" field.
@@ -260,6 +260,42 @@ func (m *TodoMutation) ResetContent() {
 	m.content = nil
 }
 
+// SetUpdatedAt sets the "updated_at" field.
+func (m *TodoMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *TodoMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Todo entity.
+// If the Todo object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TodoMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *TodoMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *TodoMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -296,43 +332,30 @@ func (m *TodoMutation) ResetCreatedAt() {
 	m.created_at = nil
 }
 
-// SetOwnerID sets the "owner" edge to the User entity by id.
-func (m *TodoMutation) SetOwnerID(id uuid.UUID) {
-	m.owner = &id
+// ClearUser clears the "user" edge to the User entity.
+func (m *TodoMutation) ClearUser() {
+	m.cleareduser = true
 }
 
-// ClearOwner clears the "owner" edge to the User entity.
-func (m *TodoMutation) ClearOwner() {
-	m.clearedowner = true
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *TodoMutation) UserCleared() bool {
+	return m.cleareduser
 }
 
-// OwnerCleared reports if the "owner" edge to the User entity was cleared.
-func (m *TodoMutation) OwnerCleared() bool {
-	return m.clearedowner
-}
-
-// OwnerID returns the "owner" edge ID in the mutation.
-func (m *TodoMutation) OwnerID() (id uuid.UUID, exists bool) {
-	if m.owner != nil {
-		return *m.owner, true
-	}
-	return
-}
-
-// OwnerIDs returns the "owner" edge IDs in the mutation.
+// UserIDs returns the "user" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// OwnerID instead. It exists only for internal usage by the builders.
-func (m *TodoMutation) OwnerIDs() (ids []uuid.UUID) {
-	if id := m.owner; id != nil {
+// UserID instead. It exists only for internal usage by the builders.
+func (m *TodoMutation) UserIDs() (ids []uuid.UUID) {
+	if id := m.user; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetOwner resets all changes to the "owner" edge.
-func (m *TodoMutation) ResetOwner() {
-	m.owner = nil
-	m.clearedowner = false
+// ResetUser resets all changes to the "user" edge.
+func (m *TodoMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
 }
 
 // Where appends a list predicates to the TodoMutation builder.
@@ -354,8 +377,8 @@ func (m *TodoMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TodoMutation) Fields() []string {
-	fields := make([]string, 0, 4)
-	if m.user_id != nil {
+	fields := make([]string, 0, 5)
+	if m.user != nil {
 		fields = append(fields, todo.FieldUserID)
 	}
 	if m.title != nil {
@@ -363,6 +386,9 @@ func (m *TodoMutation) Fields() []string {
 	}
 	if m.content != nil {
 		fields = append(fields, todo.FieldContent)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, todo.FieldUpdatedAt)
 	}
 	if m.created_at != nil {
 		fields = append(fields, todo.FieldCreatedAt)
@@ -381,6 +407,8 @@ func (m *TodoMutation) Field(name string) (ent.Value, bool) {
 		return m.Title()
 	case todo.FieldContent:
 		return m.Content()
+	case todo.FieldUpdatedAt:
+		return m.UpdatedAt()
 	case todo.FieldCreatedAt:
 		return m.CreatedAt()
 	}
@@ -398,6 +426,8 @@ func (m *TodoMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldTitle(ctx)
 	case todo.FieldContent:
 		return m.OldContent(ctx)
+	case todo.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
 	case todo.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	}
@@ -410,7 +440,7 @@ func (m *TodoMutation) OldField(ctx context.Context, name string) (ent.Value, er
 func (m *TodoMutation) SetField(name string, value ent.Value) error {
 	switch name {
 	case todo.FieldUserID:
-		v, ok := value.(string)
+		v, ok := value.(uuid.UUID)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -429,6 +459,13 @@ func (m *TodoMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetContent(v)
+		return nil
+	case todo.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
 		return nil
 	case todo.FieldCreatedAt:
 		v, ok := value.(time.Time)
@@ -495,6 +532,9 @@ func (m *TodoMutation) ResetField(name string) error {
 	case todo.FieldContent:
 		m.ResetContent()
 		return nil
+	case todo.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
 	case todo.FieldCreatedAt:
 		m.ResetCreatedAt()
 		return nil
@@ -505,8 +545,8 @@ func (m *TodoMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TodoMutation) AddedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.owner != nil {
-		edges = append(edges, todo.EdgeOwner)
+	if m.user != nil {
+		edges = append(edges, todo.EdgeUser)
 	}
 	return edges
 }
@@ -515,8 +555,8 @@ func (m *TodoMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *TodoMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case todo.EdgeOwner:
-		if id := m.owner; id != nil {
+	case todo.EdgeUser:
+		if id := m.user; id != nil {
 			return []ent.Value{*id}
 		}
 	}
@@ -540,8 +580,8 @@ func (m *TodoMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TodoMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.clearedowner {
-		edges = append(edges, todo.EdgeOwner)
+	if m.cleareduser {
+		edges = append(edges, todo.EdgeUser)
 	}
 	return edges
 }
@@ -550,8 +590,8 @@ func (m *TodoMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *TodoMutation) EdgeCleared(name string) bool {
 	switch name {
-	case todo.EdgeOwner:
-		return m.clearedowner
+	case todo.EdgeUser:
+		return m.cleareduser
 	}
 	return false
 }
@@ -560,8 +600,8 @@ func (m *TodoMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *TodoMutation) ClearEdge(name string) error {
 	switch name {
-	case todo.EdgeOwner:
-		m.ClearOwner()
+	case todo.EdgeUser:
+		m.ClearUser()
 		return nil
 	}
 	return fmt.Errorf("unknown Todo unique edge %s", name)
@@ -571,8 +611,8 @@ func (m *TodoMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *TodoMutation) ResetEdge(name string) error {
 	switch name {
-	case todo.EdgeOwner:
-		m.ResetOwner()
+	case todo.EdgeUser:
+		m.ResetUser()
 		return nil
 	}
 	return fmt.Errorf("unknown Todo edge %s", name)
@@ -581,20 +621,22 @@ func (m *TodoMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *uuid.UUID
-	email            *string
-	password         *string
-	name             *string
-	nickname         *string
-	clearedFields    map[string]struct{}
-	user_todo        map[uuid.UUID]struct{}
-	removeduser_todo map[uuid.UUID]struct{}
-	cleareduser_todo bool
-	done             bool
-	oldValue         func(context.Context) (*User, error)
-	predicates       []predicate.User
+	op                Op
+	typ               string
+	id                *uuid.UUID
+	email             *string
+	password          *string
+	name              *string
+	content           *string
+	updated_at        *time.Time
+	created_at        *time.Time
+	clearedFields     map[string]struct{}
+	user_todos        map[uuid.UUID]struct{}
+	removeduser_todos map[uuid.UUID]struct{}
+	cleareduser_todos bool
+	done              bool
+	oldValue          func(context.Context) (*User, error)
+	predicates        []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -809,94 +851,166 @@ func (m *UserMutation) ResetName() {
 	m.name = nil
 }
 
-// SetNickname sets the "nickname" field.
-func (m *UserMutation) SetNickname(s string) {
-	m.nickname = &s
+// SetContent sets the "content" field.
+func (m *UserMutation) SetContent(s string) {
+	m.content = &s
 }
 
-// Nickname returns the value of the "nickname" field in the mutation.
-func (m *UserMutation) Nickname() (r string, exists bool) {
-	v := m.nickname
+// Content returns the value of the "content" field in the mutation.
+func (m *UserMutation) Content() (r string, exists bool) {
+	v := m.content
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldNickname returns the old "nickname" field's value of the User entity.
+// OldContent returns the old "content" field's value of the User entity.
 // If the User object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldNickname(ctx context.Context) (v string, err error) {
+func (m *UserMutation) OldContent(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldNickname is only allowed on UpdateOne operations")
+		return v, errors.New("OldContent is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldNickname requires an ID field in the mutation")
+		return v, errors.New("OldContent requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldNickname: %w", err)
+		return v, fmt.Errorf("querying old value for OldContent: %w", err)
 	}
-	return oldValue.Nickname, nil
+	return oldValue.Content, nil
 }
 
-// ResetNickname resets all changes to the "nickname" field.
-func (m *UserMutation) ResetNickname() {
-	m.nickname = nil
+// ResetContent resets all changes to the "content" field.
+func (m *UserMutation) ResetContent() {
+	m.content = nil
 }
 
-// AddUserTodoIDs adds the "user_todo" edge to the Todo entity by ids.
+// SetUpdatedAt sets the "updated_at" field.
+func (m *UserMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *UserMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *UserMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *UserMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *UserMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *UserMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// AddUserTodoIDs adds the "user_todos" edge to the Todo entity by ids.
 func (m *UserMutation) AddUserTodoIDs(ids ...uuid.UUID) {
-	if m.user_todo == nil {
-		m.user_todo = make(map[uuid.UUID]struct{})
+	if m.user_todos == nil {
+		m.user_todos = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		m.user_todo[ids[i]] = struct{}{}
+		m.user_todos[ids[i]] = struct{}{}
 	}
 }
 
-// ClearUserTodo clears the "user_todo" edge to the Todo entity.
-func (m *UserMutation) ClearUserTodo() {
-	m.cleareduser_todo = true
+// ClearUserTodos clears the "user_todos" edge to the Todo entity.
+func (m *UserMutation) ClearUserTodos() {
+	m.cleareduser_todos = true
 }
 
-// UserTodoCleared reports if the "user_todo" edge to the Todo entity was cleared.
-func (m *UserMutation) UserTodoCleared() bool {
-	return m.cleareduser_todo
+// UserTodosCleared reports if the "user_todos" edge to the Todo entity was cleared.
+func (m *UserMutation) UserTodosCleared() bool {
+	return m.cleareduser_todos
 }
 
-// RemoveUserTodoIDs removes the "user_todo" edge to the Todo entity by IDs.
+// RemoveUserTodoIDs removes the "user_todos" edge to the Todo entity by IDs.
 func (m *UserMutation) RemoveUserTodoIDs(ids ...uuid.UUID) {
-	if m.removeduser_todo == nil {
-		m.removeduser_todo = make(map[uuid.UUID]struct{})
+	if m.removeduser_todos == nil {
+		m.removeduser_todos = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		delete(m.user_todo, ids[i])
-		m.removeduser_todo[ids[i]] = struct{}{}
+		delete(m.user_todos, ids[i])
+		m.removeduser_todos[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedUserTodo returns the removed IDs of the "user_todo" edge to the Todo entity.
-func (m *UserMutation) RemovedUserTodoIDs() (ids []uuid.UUID) {
-	for id := range m.removeduser_todo {
+// RemovedUserTodos returns the removed IDs of the "user_todos" edge to the Todo entity.
+func (m *UserMutation) RemovedUserTodosIDs() (ids []uuid.UUID) {
+	for id := range m.removeduser_todos {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// UserTodoIDs returns the "user_todo" edge IDs in the mutation.
-func (m *UserMutation) UserTodoIDs() (ids []uuid.UUID) {
-	for id := range m.user_todo {
+// UserTodosIDs returns the "user_todos" edge IDs in the mutation.
+func (m *UserMutation) UserTodosIDs() (ids []uuid.UUID) {
+	for id := range m.user_todos {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetUserTodo resets all changes to the "user_todo" edge.
-func (m *UserMutation) ResetUserTodo() {
-	m.user_todo = nil
-	m.cleareduser_todo = false
-	m.removeduser_todo = nil
+// ResetUserTodos resets all changes to the "user_todos" edge.
+func (m *UserMutation) ResetUserTodos() {
+	m.user_todos = nil
+	m.cleareduser_todos = false
+	m.removeduser_todos = nil
 }
 
 // Where appends a list predicates to the UserMutation builder.
@@ -918,7 +1032,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 6)
 	if m.email != nil {
 		fields = append(fields, user.FieldEmail)
 	}
@@ -928,8 +1042,14 @@ func (m *UserMutation) Fields() []string {
 	if m.name != nil {
 		fields = append(fields, user.FieldName)
 	}
-	if m.nickname != nil {
-		fields = append(fields, user.FieldNickname)
+	if m.content != nil {
+		fields = append(fields, user.FieldContent)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, user.FieldUpdatedAt)
+	}
+	if m.created_at != nil {
+		fields = append(fields, user.FieldCreatedAt)
 	}
 	return fields
 }
@@ -945,8 +1065,12 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.Password()
 	case user.FieldName:
 		return m.Name()
-	case user.FieldNickname:
-		return m.Nickname()
+	case user.FieldContent:
+		return m.Content()
+	case user.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case user.FieldCreatedAt:
+		return m.CreatedAt()
 	}
 	return nil, false
 }
@@ -962,8 +1086,12 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldPassword(ctx)
 	case user.FieldName:
 		return m.OldName(ctx)
-	case user.FieldNickname:
-		return m.OldNickname(ctx)
+	case user.FieldContent:
+		return m.OldContent(ctx)
+	case user.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case user.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown User field %s", name)
 }
@@ -994,12 +1122,26 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetName(v)
 		return nil
-	case user.FieldNickname:
+	case user.FieldContent:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetNickname(v)
+		m.SetContent(v)
+		return nil
+	case user.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case user.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
@@ -1059,8 +1201,14 @@ func (m *UserMutation) ResetField(name string) error {
 	case user.FieldName:
 		m.ResetName()
 		return nil
-	case user.FieldNickname:
-		m.ResetNickname()
+	case user.FieldContent:
+		m.ResetContent()
+		return nil
+	case user.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case user.FieldCreatedAt:
+		m.ResetCreatedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
@@ -1069,8 +1217,8 @@ func (m *UserMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.user_todo != nil {
-		edges = append(edges, user.EdgeUserTodo)
+	if m.user_todos != nil {
+		edges = append(edges, user.EdgeUserTodos)
 	}
 	return edges
 }
@@ -1079,9 +1227,9 @@ func (m *UserMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *UserMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case user.EdgeUserTodo:
-		ids := make([]ent.Value, 0, len(m.user_todo))
-		for id := range m.user_todo {
+	case user.EdgeUserTodos:
+		ids := make([]ent.Value, 0, len(m.user_todos))
+		for id := range m.user_todos {
 			ids = append(ids, id)
 		}
 		return ids
@@ -1092,8 +1240,8 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.removeduser_todo != nil {
-		edges = append(edges, user.EdgeUserTodo)
+	if m.removeduser_todos != nil {
+		edges = append(edges, user.EdgeUserTodos)
 	}
 	return edges
 }
@@ -1102,9 +1250,9 @@ func (m *UserMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case user.EdgeUserTodo:
-		ids := make([]ent.Value, 0, len(m.removeduser_todo))
-		for id := range m.removeduser_todo {
+	case user.EdgeUserTodos:
+		ids := make([]ent.Value, 0, len(m.removeduser_todos))
+		for id := range m.removeduser_todos {
 			ids = append(ids, id)
 		}
 		return ids
@@ -1115,8 +1263,8 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.cleareduser_todo {
-		edges = append(edges, user.EdgeUserTodo)
+	if m.cleareduser_todos {
+		edges = append(edges, user.EdgeUserTodos)
 	}
 	return edges
 }
@@ -1125,8 +1273,8 @@ func (m *UserMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *UserMutation) EdgeCleared(name string) bool {
 	switch name {
-	case user.EdgeUserTodo:
-		return m.cleareduser_todo
+	case user.EdgeUserTodos:
+		return m.cleareduser_todos
 	}
 	return false
 }
@@ -1143,8 +1291,8 @@ func (m *UserMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *UserMutation) ResetEdge(name string) error {
 	switch name {
-	case user.EdgeUserTodo:
-		m.ResetUserTodo()
+	case user.EdgeUserTodos:
+		m.ResetUserTodos()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

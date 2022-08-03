@@ -216,15 +216,15 @@ func (c *TodoClient) GetX(ctx context.Context, id uuid.UUID) *Todo {
 	return obj
 }
 
-// QueryOwner queries the owner edge of a Todo.
-func (c *TodoClient) QueryOwner(t *Todo) *UserQuery {
+// QueryUser queries the user edge of a Todo.
+func (c *TodoClient) QueryUser(t *Todo) *UserQuery {
 	query := &UserQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := t.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(todo.Table, todo.FieldID, id),
 			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, todo.OwnerTable, todo.OwnerColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, todo.UserTable, todo.UserColumn),
 		)
 		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
 		return fromV, nil
@@ -322,15 +322,15 @@ func (c *UserClient) GetX(ctx context.Context, id uuid.UUID) *User {
 	return obj
 }
 
-// QueryUserTodo queries the user_todo edge of a User.
-func (c *UserClient) QueryUserTodo(u *User) *TodoQuery {
+// QueryUserTodos queries the user_todos edge of a User.
+func (c *UserClient) QueryUserTodos(u *User) *TodoQuery {
 	query := &TodoQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := u.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(todo.Table, todo.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.UserTodoTable, user.UserTodoColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.UserTodosTable, user.UserTodosColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil

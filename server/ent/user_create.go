@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"go-chi-api/ent/todo"
 	"go-chi-api/ent/user"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -39,9 +40,37 @@ func (uc *UserCreate) SetName(s string) *UserCreate {
 	return uc
 }
 
-// SetNickname sets the "nickname" field.
-func (uc *UserCreate) SetNickname(s string) *UserCreate {
-	uc.mutation.SetNickname(s)
+// SetContent sets the "content" field.
+func (uc *UserCreate) SetContent(s string) *UserCreate {
+	uc.mutation.SetContent(s)
+	return uc
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (uc *UserCreate) SetUpdatedAt(t time.Time) *UserCreate {
+	uc.mutation.SetUpdatedAt(t)
+	return uc
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (uc *UserCreate) SetNillableUpdatedAt(t *time.Time) *UserCreate {
+	if t != nil {
+		uc.SetUpdatedAt(*t)
+	}
+	return uc
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (uc *UserCreate) SetCreatedAt(t time.Time) *UserCreate {
+	uc.mutation.SetCreatedAt(t)
+	return uc
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (uc *UserCreate) SetNillableCreatedAt(t *time.Time) *UserCreate {
+	if t != nil {
+		uc.SetCreatedAt(*t)
+	}
 	return uc
 }
 
@@ -59,14 +88,14 @@ func (uc *UserCreate) SetNillableID(u *uuid.UUID) *UserCreate {
 	return uc
 }
 
-// AddUserTodoIDs adds the "user_todo" edge to the Todo entity by IDs.
+// AddUserTodoIDs adds the "user_todos" edge to the Todo entity by IDs.
 func (uc *UserCreate) AddUserTodoIDs(ids ...uuid.UUID) *UserCreate {
 	uc.mutation.AddUserTodoIDs(ids...)
 	return uc
 }
 
-// AddUserTodo adds the "user_todo" edges to the Todo entity.
-func (uc *UserCreate) AddUserTodo(t ...*Todo) *UserCreate {
+// AddUserTodos adds the "user_todos" edges to the Todo entity.
+func (uc *UserCreate) AddUserTodos(t ...*Todo) *UserCreate {
 	ids := make([]uuid.UUID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
@@ -151,6 +180,14 @@ func (uc *UserCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (uc *UserCreate) defaults() {
+	if _, ok := uc.mutation.UpdatedAt(); !ok {
+		v := user.DefaultUpdatedAt()
+		uc.mutation.SetUpdatedAt(v)
+	}
+	if _, ok := uc.mutation.CreatedAt(); !ok {
+		v := user.DefaultCreatedAt()
+		uc.mutation.SetCreatedAt(v)
+	}
 	if _, ok := uc.mutation.ID(); !ok {
 		v := user.DefaultID()
 		uc.mutation.SetID(v)
@@ -168,8 +205,19 @@ func (uc *UserCreate) check() error {
 	if _, ok := uc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "User.name"`)}
 	}
-	if _, ok := uc.mutation.Nickname(); !ok {
-		return &ValidationError{Name: "nickname", err: errors.New(`ent: missing required field "User.nickname"`)}
+	if _, ok := uc.mutation.Content(); !ok {
+		return &ValidationError{Name: "content", err: errors.New(`ent: missing required field "User.content"`)}
+	}
+	if v, ok := uc.mutation.Content(); ok {
+		if err := user.ContentValidator(v); err != nil {
+			return &ValidationError{Name: "content", err: fmt.Errorf(`ent: validator failed for field "User.content": %w`, err)}
+		}
+	}
+	if _, ok := uc.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "User.updated_at"`)}
+	}
+	if _, ok := uc.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "User.created_at"`)}
 	}
 	return nil
 }
@@ -231,20 +279,36 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		})
 		_node.Name = value
 	}
-	if value, ok := uc.mutation.Nickname(); ok {
+	if value, ok := uc.mutation.Content(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: user.FieldNickname,
+			Column: user.FieldContent,
 		})
-		_node.Nickname = value
+		_node.Content = value
 	}
-	if nodes := uc.mutation.UserTodoIDs(); len(nodes) > 0 {
+	if value, ok := uc.mutation.UpdatedAt(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: user.FieldUpdatedAt,
+		})
+		_node.UpdatedAt = value
+	}
+	if value, ok := uc.mutation.CreatedAt(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: user.FieldCreatedAt,
+		})
+		_node.CreatedAt = value
+	}
+	if nodes := uc.mutation.UserTodosIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.UserTodoTable,
-			Columns: []string{user.UserTodoColumn},
+			Table:   user.UserTodosTable,
+			Columns: []string{user.UserTodosColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

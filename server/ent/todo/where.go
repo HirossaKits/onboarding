@@ -83,7 +83,7 @@ func IDLTE(id uuid.UUID) predicate.Todo {
 }
 
 // UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
-func UserID(v string) predicate.Todo {
+func UserID(v uuid.UUID) predicate.Todo {
 	return predicate.Todo(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldUserID), v))
 	})
@@ -103,6 +103,13 @@ func Content(v string) predicate.Todo {
 	})
 }
 
+// UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
+func UpdatedAt(v time.Time) predicate.Todo {
+	return predicate.Todo(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldUpdatedAt), v))
+	})
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Todo {
 	return predicate.Todo(func(s *sql.Selector) {
@@ -111,21 +118,21 @@ func CreatedAt(v time.Time) predicate.Todo {
 }
 
 // UserIDEQ applies the EQ predicate on the "user_id" field.
-func UserIDEQ(v string) predicate.Todo {
+func UserIDEQ(v uuid.UUID) predicate.Todo {
 	return predicate.Todo(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldUserID), v))
 	})
 }
 
 // UserIDNEQ applies the NEQ predicate on the "user_id" field.
-func UserIDNEQ(v string) predicate.Todo {
+func UserIDNEQ(v uuid.UUID) predicate.Todo {
 	return predicate.Todo(func(s *sql.Selector) {
 		s.Where(sql.NEQ(s.C(FieldUserID), v))
 	})
 }
 
 // UserIDIn applies the In predicate on the "user_id" field.
-func UserIDIn(vs ...string) predicate.Todo {
+func UserIDIn(vs ...uuid.UUID) predicate.Todo {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -142,7 +149,7 @@ func UserIDIn(vs ...string) predicate.Todo {
 }
 
 // UserIDNotIn applies the NotIn predicate on the "user_id" field.
-func UserIDNotIn(vs ...string) predicate.Todo {
+func UserIDNotIn(vs ...uuid.UUID) predicate.Todo {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -155,69 +162,6 @@ func UserIDNotIn(vs ...string) predicate.Todo {
 			return
 		}
 		s.Where(sql.NotIn(s.C(FieldUserID), v...))
-	})
-}
-
-// UserIDGT applies the GT predicate on the "user_id" field.
-func UserIDGT(v string) predicate.Todo {
-	return predicate.Todo(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldUserID), v))
-	})
-}
-
-// UserIDGTE applies the GTE predicate on the "user_id" field.
-func UserIDGTE(v string) predicate.Todo {
-	return predicate.Todo(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldUserID), v))
-	})
-}
-
-// UserIDLT applies the LT predicate on the "user_id" field.
-func UserIDLT(v string) predicate.Todo {
-	return predicate.Todo(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldUserID), v))
-	})
-}
-
-// UserIDLTE applies the LTE predicate on the "user_id" field.
-func UserIDLTE(v string) predicate.Todo {
-	return predicate.Todo(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldUserID), v))
-	})
-}
-
-// UserIDContains applies the Contains predicate on the "user_id" field.
-func UserIDContains(v string) predicate.Todo {
-	return predicate.Todo(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldUserID), v))
-	})
-}
-
-// UserIDHasPrefix applies the HasPrefix predicate on the "user_id" field.
-func UserIDHasPrefix(v string) predicate.Todo {
-	return predicate.Todo(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldUserID), v))
-	})
-}
-
-// UserIDHasSuffix applies the HasSuffix predicate on the "user_id" field.
-func UserIDHasSuffix(v string) predicate.Todo {
-	return predicate.Todo(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldUserID), v))
-	})
-}
-
-// UserIDEqualFold applies the EqualFold predicate on the "user_id" field.
-func UserIDEqualFold(v string) predicate.Todo {
-	return predicate.Todo(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldUserID), v))
-	})
-}
-
-// UserIDContainsFold applies the ContainsFold predicate on the "user_id" field.
-func UserIDContainsFold(v string) predicate.Todo {
-	return predicate.Todo(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldUserID), v))
 	})
 }
 
@@ -443,6 +387,82 @@ func ContentContainsFold(v string) predicate.Todo {
 	})
 }
 
+// UpdatedAtEQ applies the EQ predicate on the "updated_at" field.
+func UpdatedAtEQ(v time.Time) predicate.Todo {
+	return predicate.Todo(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldUpdatedAt), v))
+	})
+}
+
+// UpdatedAtNEQ applies the NEQ predicate on the "updated_at" field.
+func UpdatedAtNEQ(v time.Time) predicate.Todo {
+	return predicate.Todo(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldUpdatedAt), v))
+	})
+}
+
+// UpdatedAtIn applies the In predicate on the "updated_at" field.
+func UpdatedAtIn(vs ...time.Time) predicate.Todo {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Todo(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldUpdatedAt), v...))
+	})
+}
+
+// UpdatedAtNotIn applies the NotIn predicate on the "updated_at" field.
+func UpdatedAtNotIn(vs ...time.Time) predicate.Todo {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Todo(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldUpdatedAt), v...))
+	})
+}
+
+// UpdatedAtGT applies the GT predicate on the "updated_at" field.
+func UpdatedAtGT(v time.Time) predicate.Todo {
+	return predicate.Todo(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldUpdatedAt), v))
+	})
+}
+
+// UpdatedAtGTE applies the GTE predicate on the "updated_at" field.
+func UpdatedAtGTE(v time.Time) predicate.Todo {
+	return predicate.Todo(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldUpdatedAt), v))
+	})
+}
+
+// UpdatedAtLT applies the LT predicate on the "updated_at" field.
+func UpdatedAtLT(v time.Time) predicate.Todo {
+	return predicate.Todo(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldUpdatedAt), v))
+	})
+}
+
+// UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
+func UpdatedAtLTE(v time.Time) predicate.Todo {
+	return predicate.Todo(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldUpdatedAt), v))
+	})
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Todo {
 	return predicate.Todo(func(s *sql.Selector) {
@@ -519,25 +539,25 @@ func CreatedAtLTE(v time.Time) predicate.Todo {
 	})
 }
 
-// HasOwner applies the HasEdge predicate on the "owner" edge.
-func HasOwner() predicate.Todo {
+// HasUser applies the HasEdge predicate on the "user" edge.
+func HasUser() predicate.Todo {
 	return predicate.Todo(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(OwnerTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, OwnerTable, OwnerColumn),
+			sqlgraph.To(UserTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasOwnerWith applies the HasEdge predicate on the "owner" edge with a given conditions (other predicates).
-func HasOwnerWith(preds ...predicate.User) predicate.Todo {
+// HasUserWith applies the HasEdge predicate on the "user" edge with a given conditions (other predicates).
+func HasUserWith(preds ...predicate.User) predicate.Todo {
 	return predicate.Todo(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(OwnerInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, OwnerTable, OwnerColumn),
+			sqlgraph.To(UserInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

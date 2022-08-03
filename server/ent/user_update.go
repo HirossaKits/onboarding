@@ -9,6 +9,7 @@ import (
 	"go-chi-api/ent/predicate"
 	"go-chi-api/ent/todo"
 	"go-chi-api/ent/user"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -47,20 +48,34 @@ func (uu *UserUpdate) SetName(s string) *UserUpdate {
 	return uu
 }
 
-// SetNickname sets the "nickname" field.
-func (uu *UserUpdate) SetNickname(s string) *UserUpdate {
-	uu.mutation.SetNickname(s)
+// SetContent sets the "content" field.
+func (uu *UserUpdate) SetContent(s string) *UserUpdate {
+	uu.mutation.SetContent(s)
 	return uu
 }
 
-// AddUserTodoIDs adds the "user_todo" edge to the Todo entity by IDs.
+// SetUpdatedAt sets the "updated_at" field.
+func (uu *UserUpdate) SetUpdatedAt(t time.Time) *UserUpdate {
+	uu.mutation.SetUpdatedAt(t)
+	return uu
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableUpdatedAt(t *time.Time) *UserUpdate {
+	if t != nil {
+		uu.SetUpdatedAt(*t)
+	}
+	return uu
+}
+
+// AddUserTodoIDs adds the "user_todos" edge to the Todo entity by IDs.
 func (uu *UserUpdate) AddUserTodoIDs(ids ...uuid.UUID) *UserUpdate {
 	uu.mutation.AddUserTodoIDs(ids...)
 	return uu
 }
 
-// AddUserTodo adds the "user_todo" edges to the Todo entity.
-func (uu *UserUpdate) AddUserTodo(t ...*Todo) *UserUpdate {
+// AddUserTodos adds the "user_todos" edges to the Todo entity.
+func (uu *UserUpdate) AddUserTodos(t ...*Todo) *UserUpdate {
 	ids := make([]uuid.UUID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
@@ -73,20 +88,20 @@ func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
 }
 
-// ClearUserTodo clears all "user_todo" edges to the Todo entity.
-func (uu *UserUpdate) ClearUserTodo() *UserUpdate {
-	uu.mutation.ClearUserTodo()
+// ClearUserTodos clears all "user_todos" edges to the Todo entity.
+func (uu *UserUpdate) ClearUserTodos() *UserUpdate {
+	uu.mutation.ClearUserTodos()
 	return uu
 }
 
-// RemoveUserTodoIDs removes the "user_todo" edge to Todo entities by IDs.
+// RemoveUserTodoIDs removes the "user_todos" edge to Todo entities by IDs.
 func (uu *UserUpdate) RemoveUserTodoIDs(ids ...uuid.UUID) *UserUpdate {
 	uu.mutation.RemoveUserTodoIDs(ids...)
 	return uu
 }
 
-// RemoveUserTodo removes "user_todo" edges to Todo entities.
-func (uu *UserUpdate) RemoveUserTodo(t ...*Todo) *UserUpdate {
+// RemoveUserTodos removes "user_todos" edges to Todo entities.
+func (uu *UserUpdate) RemoveUserTodos(t ...*Todo) *UserUpdate {
 	ids := make([]uuid.UUID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
@@ -101,12 +116,18 @@ func (uu *UserUpdate) Save(ctx context.Context) (int, error) {
 		affected int
 	)
 	if len(uu.hooks) == 0 {
+		if err = uu.check(); err != nil {
+			return 0, err
+		}
 		affected, err = uu.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*UserMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = uu.check(); err != nil {
+				return 0, err
 			}
 			uu.mutation = mutation
 			affected, err = uu.sqlSave(ctx)
@@ -148,6 +169,16 @@ func (uu *UserUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (uu *UserUpdate) check() error {
+	if v, ok := uu.mutation.Content(); ok {
+		if err := user.ContentValidator(v); err != nil {
+			return &ValidationError{Name: "content", err: fmt.Errorf(`ent: validator failed for field "User.content": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
@@ -187,19 +218,26 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: user.FieldName,
 		})
 	}
-	if value, ok := uu.mutation.Nickname(); ok {
+	if value, ok := uu.mutation.Content(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: user.FieldNickname,
+			Column: user.FieldContent,
 		})
 	}
-	if uu.mutation.UserTodoCleared() {
+	if value, ok := uu.mutation.UpdatedAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: user.FieldUpdatedAt,
+		})
+	}
+	if uu.mutation.UserTodosCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.UserTodoTable,
-			Columns: []string{user.UserTodoColumn},
+			Table:   user.UserTodosTable,
+			Columns: []string{user.UserTodosColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -210,12 +248,12 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.RemovedUserTodoIDs(); len(nodes) > 0 && !uu.mutation.UserTodoCleared() {
+	if nodes := uu.mutation.RemovedUserTodosIDs(); len(nodes) > 0 && !uu.mutation.UserTodosCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.UserTodoTable,
-			Columns: []string{user.UserTodoColumn},
+			Table:   user.UserTodosTable,
+			Columns: []string{user.UserTodosColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -229,12 +267,12 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.UserTodoIDs(); len(nodes) > 0 {
+	if nodes := uu.mutation.UserTodosIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.UserTodoTable,
-			Columns: []string{user.UserTodoColumn},
+			Table:   user.UserTodosTable,
+			Columns: []string{user.UserTodosColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -285,20 +323,34 @@ func (uuo *UserUpdateOne) SetName(s string) *UserUpdateOne {
 	return uuo
 }
 
-// SetNickname sets the "nickname" field.
-func (uuo *UserUpdateOne) SetNickname(s string) *UserUpdateOne {
-	uuo.mutation.SetNickname(s)
+// SetContent sets the "content" field.
+func (uuo *UserUpdateOne) SetContent(s string) *UserUpdateOne {
+	uuo.mutation.SetContent(s)
 	return uuo
 }
 
-// AddUserTodoIDs adds the "user_todo" edge to the Todo entity by IDs.
+// SetUpdatedAt sets the "updated_at" field.
+func (uuo *UserUpdateOne) SetUpdatedAt(t time.Time) *UserUpdateOne {
+	uuo.mutation.SetUpdatedAt(t)
+	return uuo
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableUpdatedAt(t *time.Time) *UserUpdateOne {
+	if t != nil {
+		uuo.SetUpdatedAt(*t)
+	}
+	return uuo
+}
+
+// AddUserTodoIDs adds the "user_todos" edge to the Todo entity by IDs.
 func (uuo *UserUpdateOne) AddUserTodoIDs(ids ...uuid.UUID) *UserUpdateOne {
 	uuo.mutation.AddUserTodoIDs(ids...)
 	return uuo
 }
 
-// AddUserTodo adds the "user_todo" edges to the Todo entity.
-func (uuo *UserUpdateOne) AddUserTodo(t ...*Todo) *UserUpdateOne {
+// AddUserTodos adds the "user_todos" edges to the Todo entity.
+func (uuo *UserUpdateOne) AddUserTodos(t ...*Todo) *UserUpdateOne {
 	ids := make([]uuid.UUID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
@@ -311,20 +363,20 @@ func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
 }
 
-// ClearUserTodo clears all "user_todo" edges to the Todo entity.
-func (uuo *UserUpdateOne) ClearUserTodo() *UserUpdateOne {
-	uuo.mutation.ClearUserTodo()
+// ClearUserTodos clears all "user_todos" edges to the Todo entity.
+func (uuo *UserUpdateOne) ClearUserTodos() *UserUpdateOne {
+	uuo.mutation.ClearUserTodos()
 	return uuo
 }
 
-// RemoveUserTodoIDs removes the "user_todo" edge to Todo entities by IDs.
+// RemoveUserTodoIDs removes the "user_todos" edge to Todo entities by IDs.
 func (uuo *UserUpdateOne) RemoveUserTodoIDs(ids ...uuid.UUID) *UserUpdateOne {
 	uuo.mutation.RemoveUserTodoIDs(ids...)
 	return uuo
 }
 
-// RemoveUserTodo removes "user_todo" edges to Todo entities.
-func (uuo *UserUpdateOne) RemoveUserTodo(t ...*Todo) *UserUpdateOne {
+// RemoveUserTodos removes "user_todos" edges to Todo entities.
+func (uuo *UserUpdateOne) RemoveUserTodos(t ...*Todo) *UserUpdateOne {
 	ids := make([]uuid.UUID, len(t))
 	for i := range t {
 		ids[i] = t[i].ID
@@ -346,12 +398,18 @@ func (uuo *UserUpdateOne) Save(ctx context.Context) (*User, error) {
 		node *User
 	)
 	if len(uuo.hooks) == 0 {
+		if err = uuo.check(); err != nil {
+			return nil, err
+		}
 		node, err = uuo.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*UserMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = uuo.check(); err != nil {
+				return nil, err
 			}
 			uuo.mutation = mutation
 			node, err = uuo.sqlSave(ctx)
@@ -397,6 +455,16 @@ func (uuo *UserUpdateOne) ExecX(ctx context.Context) {
 	if err := uuo.Exec(ctx); err != nil {
 		panic(err)
 	}
+}
+
+// check runs all checks and user-defined validators on the builder.
+func (uuo *UserUpdateOne) check() error {
+	if v, ok := uuo.mutation.Content(); ok {
+		if err := user.ContentValidator(v); err != nil {
+			return &ValidationError{Name: "content", err: fmt.Errorf(`ent: validator failed for field "User.content": %w`, err)}
+		}
+	}
+	return nil
 }
 
 func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
@@ -455,19 +523,26 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Column: user.FieldName,
 		})
 	}
-	if value, ok := uuo.mutation.Nickname(); ok {
+	if value, ok := uuo.mutation.Content(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: user.FieldNickname,
+			Column: user.FieldContent,
 		})
 	}
-	if uuo.mutation.UserTodoCleared() {
+	if value, ok := uuo.mutation.UpdatedAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: user.FieldUpdatedAt,
+		})
+	}
+	if uuo.mutation.UserTodosCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.UserTodoTable,
-			Columns: []string{user.UserTodoColumn},
+			Table:   user.UserTodosTable,
+			Columns: []string{user.UserTodosColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -478,12 +553,12 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.RemovedUserTodoIDs(); len(nodes) > 0 && !uuo.mutation.UserTodoCleared() {
+	if nodes := uuo.mutation.RemovedUserTodosIDs(); len(nodes) > 0 && !uuo.mutation.UserTodosCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.UserTodoTable,
-			Columns: []string{user.UserTodoColumn},
+			Table:   user.UserTodosTable,
+			Columns: []string{user.UserTodosColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -497,12 +572,12 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.UserTodoIDs(); len(nodes) > 0 {
+	if nodes := uuo.mutation.UserTodosIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.UserTodoTable,
-			Columns: []string{user.UserTodoColumn},
+			Table:   user.UserTodosTable,
+			Columns: []string{user.UserTodosColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

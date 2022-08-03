@@ -17,7 +17,7 @@ type Todo struct {
 func (Todo) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New),
-		field.Text("user_id").NotEmpty(),
+		field.UUID("user_id", uuid.UUID{}),
 		field.Text("title").NotEmpty(),
 		field.Text("content").NotEmpty(),
 		field.Time("updated_at").Default(time.Now),
@@ -27,7 +27,7 @@ func (Todo) Fields() []ent.Field {
 
 func (Todo) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("owner", User.Type).Ref("user_todo").Required().Unique(),
+		edge.From("user", User.Type).Ref("user_todos").Required().Unique().Field("user_id"),
 	}
 }
 

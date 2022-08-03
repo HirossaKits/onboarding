@@ -9,6 +9,7 @@ import (
 	"go-chi-api/ent/predicate"
 	"go-chi-api/ent/todo"
 	"go-chi-api/ent/user"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -30,8 +31,8 @@ func (tu *TodoUpdate) Where(ps ...predicate.Todo) *TodoUpdate {
 }
 
 // SetUserID sets the "user_id" field.
-func (tu *TodoUpdate) SetUserID(s string) *TodoUpdate {
-	tu.mutation.SetUserID(s)
+func (tu *TodoUpdate) SetUserID(u uuid.UUID) *TodoUpdate {
+	tu.mutation.SetUserID(u)
 	return tu
 }
 
@@ -47,15 +48,23 @@ func (tu *TodoUpdate) SetContent(s string) *TodoUpdate {
 	return tu
 }
 
-// SetOwnerID sets the "owner" edge to the User entity by ID.
-func (tu *TodoUpdate) SetOwnerID(id uuid.UUID) *TodoUpdate {
-	tu.mutation.SetOwnerID(id)
+// SetUpdatedAt sets the "updated_at" field.
+func (tu *TodoUpdate) SetUpdatedAt(t time.Time) *TodoUpdate {
+	tu.mutation.SetUpdatedAt(t)
 	return tu
 }
 
-// SetOwner sets the "owner" edge to the User entity.
-func (tu *TodoUpdate) SetOwner(u *User) *TodoUpdate {
-	return tu.SetOwnerID(u.ID)
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (tu *TodoUpdate) SetNillableUpdatedAt(t *time.Time) *TodoUpdate {
+	if t != nil {
+		tu.SetUpdatedAt(*t)
+	}
+	return tu
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (tu *TodoUpdate) SetUser(u *User) *TodoUpdate {
+	return tu.SetUserID(u.ID)
 }
 
 // Mutation returns the TodoMutation object of the builder.
@@ -63,9 +72,9 @@ func (tu *TodoUpdate) Mutation() *TodoMutation {
 	return tu.mutation
 }
 
-// ClearOwner clears the "owner" edge to the User entity.
-func (tu *TodoUpdate) ClearOwner() *TodoUpdate {
-	tu.mutation.ClearOwner()
+// ClearUser clears the "user" edge to the User entity.
+func (tu *TodoUpdate) ClearUser() *TodoUpdate {
+	tu.mutation.ClearUser()
 	return tu
 }
 
@@ -131,11 +140,6 @@ func (tu *TodoUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (tu *TodoUpdate) check() error {
-	if v, ok := tu.mutation.UserID(); ok {
-		if err := todo.UserIDValidator(v); err != nil {
-			return &ValidationError{Name: "user_id", err: fmt.Errorf(`ent: validator failed for field "Todo.user_id": %w`, err)}
-		}
-	}
 	if v, ok := tu.mutation.Title(); ok {
 		if err := todo.TitleValidator(v); err != nil {
 			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "Todo.title": %w`, err)}
@@ -146,8 +150,8 @@ func (tu *TodoUpdate) check() error {
 			return &ValidationError{Name: "content", err: fmt.Errorf(`ent: validator failed for field "Todo.content": %w`, err)}
 		}
 	}
-	if _, ok := tu.mutation.OwnerID(); tu.mutation.OwnerCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Todo.owner"`)
+	if _, ok := tu.mutation.UserID(); tu.mutation.UserCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Todo.user"`)
 	}
 	return nil
 }
@@ -170,13 +174,6 @@ func (tu *TodoUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := tu.mutation.UserID(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: todo.FieldUserID,
-		})
-	}
 	if value, ok := tu.mutation.Title(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -191,12 +188,19 @@ func (tu *TodoUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: todo.FieldContent,
 		})
 	}
-	if tu.mutation.OwnerCleared() {
+	if value, ok := tu.mutation.UpdatedAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: todo.FieldUpdatedAt,
+		})
+	}
+	if tu.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   todo.OwnerTable,
-			Columns: []string{todo.OwnerColumn},
+			Table:   todo.UserTable,
+			Columns: []string{todo.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -207,12 +211,12 @@ func (tu *TodoUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tu.mutation.OwnerIDs(); len(nodes) > 0 {
+	if nodes := tu.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   todo.OwnerTable,
-			Columns: []string{todo.OwnerColumn},
+			Table:   todo.UserTable,
+			Columns: []string{todo.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -246,8 +250,8 @@ type TodoUpdateOne struct {
 }
 
 // SetUserID sets the "user_id" field.
-func (tuo *TodoUpdateOne) SetUserID(s string) *TodoUpdateOne {
-	tuo.mutation.SetUserID(s)
+func (tuo *TodoUpdateOne) SetUserID(u uuid.UUID) *TodoUpdateOne {
+	tuo.mutation.SetUserID(u)
 	return tuo
 }
 
@@ -263,15 +267,23 @@ func (tuo *TodoUpdateOne) SetContent(s string) *TodoUpdateOne {
 	return tuo
 }
 
-// SetOwnerID sets the "owner" edge to the User entity by ID.
-func (tuo *TodoUpdateOne) SetOwnerID(id uuid.UUID) *TodoUpdateOne {
-	tuo.mutation.SetOwnerID(id)
+// SetUpdatedAt sets the "updated_at" field.
+func (tuo *TodoUpdateOne) SetUpdatedAt(t time.Time) *TodoUpdateOne {
+	tuo.mutation.SetUpdatedAt(t)
 	return tuo
 }
 
-// SetOwner sets the "owner" edge to the User entity.
-func (tuo *TodoUpdateOne) SetOwner(u *User) *TodoUpdateOne {
-	return tuo.SetOwnerID(u.ID)
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (tuo *TodoUpdateOne) SetNillableUpdatedAt(t *time.Time) *TodoUpdateOne {
+	if t != nil {
+		tuo.SetUpdatedAt(*t)
+	}
+	return tuo
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (tuo *TodoUpdateOne) SetUser(u *User) *TodoUpdateOne {
+	return tuo.SetUserID(u.ID)
 }
 
 // Mutation returns the TodoMutation object of the builder.
@@ -279,9 +291,9 @@ func (tuo *TodoUpdateOne) Mutation() *TodoMutation {
 	return tuo.mutation
 }
 
-// ClearOwner clears the "owner" edge to the User entity.
-func (tuo *TodoUpdateOne) ClearOwner() *TodoUpdateOne {
-	tuo.mutation.ClearOwner()
+// ClearUser clears the "user" edge to the User entity.
+func (tuo *TodoUpdateOne) ClearUser() *TodoUpdateOne {
+	tuo.mutation.ClearUser()
 	return tuo
 }
 
@@ -360,11 +372,6 @@ func (tuo *TodoUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (tuo *TodoUpdateOne) check() error {
-	if v, ok := tuo.mutation.UserID(); ok {
-		if err := todo.UserIDValidator(v); err != nil {
-			return &ValidationError{Name: "user_id", err: fmt.Errorf(`ent: validator failed for field "Todo.user_id": %w`, err)}
-		}
-	}
 	if v, ok := tuo.mutation.Title(); ok {
 		if err := todo.TitleValidator(v); err != nil {
 			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "Todo.title": %w`, err)}
@@ -375,8 +382,8 @@ func (tuo *TodoUpdateOne) check() error {
 			return &ValidationError{Name: "content", err: fmt.Errorf(`ent: validator failed for field "Todo.content": %w`, err)}
 		}
 	}
-	if _, ok := tuo.mutation.OwnerID(); tuo.mutation.OwnerCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "Todo.owner"`)
+	if _, ok := tuo.mutation.UserID(); tuo.mutation.UserCleared() && !ok {
+		return errors.New(`ent: clearing a required unique edge "Todo.user"`)
 	}
 	return nil
 }
@@ -416,13 +423,6 @@ func (tuo *TodoUpdateOne) sqlSave(ctx context.Context) (_node *Todo, err error) 
 			}
 		}
 	}
-	if value, ok := tuo.mutation.UserID(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: todo.FieldUserID,
-		})
-	}
 	if value, ok := tuo.mutation.Title(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -437,12 +437,19 @@ func (tuo *TodoUpdateOne) sqlSave(ctx context.Context) (_node *Todo, err error) 
 			Column: todo.FieldContent,
 		})
 	}
-	if tuo.mutation.OwnerCleared() {
+	if value, ok := tuo.mutation.UpdatedAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: todo.FieldUpdatedAt,
+		})
+	}
+	if tuo.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   todo.OwnerTable,
-			Columns: []string{todo.OwnerColumn},
+			Table:   todo.UserTable,
+			Columns: []string{todo.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -453,12 +460,12 @@ func (tuo *TodoUpdateOne) sqlSave(ctx context.Context) (_node *Todo, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := tuo.mutation.OwnerIDs(); len(nodes) > 0 {
+	if nodes := tuo.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   todo.OwnerTable,
-			Columns: []string{todo.OwnerColumn},
+			Table:   todo.UserTable,
+			Columns: []string{todo.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
