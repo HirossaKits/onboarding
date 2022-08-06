@@ -6,6 +6,9 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func UserRouter(router *chi.Mux) {
-	router.Get("/api/getExample", controllers.GetUser)
+func NewUserRouter() *chi.Mux {
+	r := chi.NewRouter()
+	r.Get("/{user_id}", controllers.GetUser)
+
+	return r
 }
