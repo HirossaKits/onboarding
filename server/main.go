@@ -23,10 +23,13 @@ func New() *server {
 	}
 }
 
+ctx := context.Background()
+ctx.server := server
+
 func (s *server) Route() {
 	s.router.Route("/api", func(r chi.Router) {
-		r.Mount("/user", routers.UserRouter())
-		r.Mount("/todo", routers.UserRouter())
+		r.Route("/user", routers.UserRouter())
+		r.Route("/todo", routers.UserRouter())
 	})
 }
 
