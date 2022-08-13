@@ -1,17 +1,21 @@
 package routers
 
 import (
+	"context"
 	"go-chi-api/controllers"
 
 	"github.com/go-chi/chi/v5"
 )
 
-type UserRouter struct {
+type userRouter struct{}
+
+func NewUserRouter() *userRouter {
+	return &userRouter{}
 }
 
-func UserRouter(*ctx) *chi.Mux {
+func (*userRouter) Route(ctx *context.Context) *chi.Mux {
 	r := chi.NewRouter()
-	r.Get("/{user_id}", controllers.GetUser)
-
+	c := controllers.NewUserController()
+	r.Get("/{user_id}", c.GetUserById(ctx))
 	return r
 }

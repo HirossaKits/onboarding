@@ -1,44 +1,42 @@
 package main
 
 import (
-	"go-chi-api/ent"
+	"context"
 	"log"
 	"net/http"
+	"time"
 
-	"go-chi-api/db"
 	"go-chi-api/routers"
 
 	"github.com/go-chi/chi/v5"
 )
 
 type server struct {
-	client *ent.Client
 	router *chi.Mux
 }
 
 func New() *server {
 	return &server{
-		client: db.NewClient(),
 		router: chi.NewRouter(),
 	}
 }
 
-ctx := context.Background()
-ctx.server := server
+func (s *server) route() {
 
-func (s *server) Route() {
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
 	s.router.Route("/api", func(r chi.Router) {
-		r.Route("/user", routers.UserRouter())
-		r.Route("/todo", routers.UserRouter())
+		userRouter := routers.NewUserRouter()
+		r.Mount("/user", userRouter.Route(&ctx))
 	})
 }
 
 func main() {
 
 	s := New()
-	s.Route()
-
-	defer s.client.Close()
+	s.route()
 
 	err := http.ListenAndServe(":8080", s.router)
 	if err != nil {

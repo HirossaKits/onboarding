@@ -10,12 +10,12 @@ import (
 // migrate db
 func main() {
 
-	store := NewStore()
-	defer store.Client.Close()
+	c := NewClient()
+	defer c.Close()
 
 	ctx := context.Background()
 
-	err := store.Client.Schema.Create(
+	err := c.Schema.Create(
 		ctx,
 		migrate.WithDropIndex(true),
 		migrate.WithDropColumn(true),

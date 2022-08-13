@@ -1,11 +1,19 @@
 package services
 
-func GetUserById() {
-	a8m, err := client.User.
-		Create().
-		SetName("a8m").
-		SetNillableAge(age).
-		AddGroups(g1, g2).
-		SetSpouse(nati).
-		Save(ctx)
+import (
+	"context"
+	"go-chi-api/controllers"
+	"go-chi-api/ent"
+	"go-chi-api/ent/user"
+)
+
+func GetUserById(ctx *context.Context, client *ent.Client, param controllers.UserIdParam) (string, error) {
+
+	user, err := client.User.
+		Query().
+		// Unique().
+		Select(user.FieldID, user.FieldName).
+		String(*ctx)
+
+	return user, err
 }
