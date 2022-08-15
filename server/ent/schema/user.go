@@ -20,7 +20,6 @@ func (User) Fields() []ent.Field {
 		field.String("email"),
 		field.String("password"),
 		field.String("name"),
-		field.Text("content").NotEmpty(),
 		field.Time("updated_at").Default(time.Now),
 		field.Time("created_at").Default(time.Now).Immutable(),
 	}

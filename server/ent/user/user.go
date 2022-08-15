@@ -19,8 +19,6 @@ const (
 	FieldPassword = "password"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
-	// FieldContent holds the string denoting the content field in the database.
-	FieldContent = "content"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -44,7 +42,6 @@ var Columns = []string{
 	FieldEmail,
 	FieldPassword,
 	FieldName,
-	FieldContent,
 	FieldUpdatedAt,
 	FieldCreatedAt,
 }
@@ -60,8 +57,6 @@ func ValidColumn(column string) bool {
 }
 
 var (
-	// ContentValidator is a validator for the "content" field. It is called by the builders before save.
-	ContentValidator func(string) error
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
 	DefaultUpdatedAt func() time.Time
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
