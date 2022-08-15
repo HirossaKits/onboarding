@@ -8,7 +8,7 @@ import (
 )
 
 // migrate db
-func main() {
+func Migrate() {
 
 	c := NewClient()
 	defer c.Close()

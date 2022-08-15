@@ -4,8 +4,10 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
+	"go-chi-api/db"
 	"go-chi-api/routers"
 
 	"github.com/go-chi/chi/v5"
@@ -35,11 +37,22 @@ func (s *server) route() {
 
 func main() {
 
-	s := New()
-	s.route()
+	args := os.Args
 
-	err := http.ListenAndServe(":8080", s.router)
-	if err != nil {
-		log.Fatalf("failed starting server: %v", err)
+	if len(args) == 2 {
+		if args[1] == "migrate" {
+			db.Migrate()
+		}
+	}
+
+	if len(args) == 1 {
+
+		s := New()
+		s.route()
+
+		err := http.ListenAndServe(":8080", s.router)
+		if err != nil {
+			log.Fatalf("failed starting server: %v", err)
+		}
 	}
 }

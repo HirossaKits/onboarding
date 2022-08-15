@@ -1,21 +1,27 @@
 package validators
 
-import "io"
+import (
+	"io"
+)
 
-type userValidator struct{}
-
-type GetUserParam struct {
-	user_id string
+type GetUserParams struct {
+	User_id string
 }
 
-func NewUserValidator() *userValidator {
-	return &userValidator{}
+type CreateUserParams struct {
+	Email    string
+	Password string
+	Name     string
 }
 
-func (*userValidator) ValidateGetUserParam(body []byte) {
-
+func ValidateGetUserParam(body *io.ReadCloser) (GetUserParams, error) {
+	params, err := ConvToStruct[GetUserParams](body)
+	// ここで何かしらのバリデーションを行う
+	return params, err
 }
 
-func Validatep[T any](*io.ReadCloser) {
-
+func ValidateCreateUserParam(body *io.ReadCloser) (CreateUserParams, error) {
+	params, err := ConvToStruct[CreateUserParams](body)
+	// ここで何かしらのバリデーションを行う
+	return params, err
 }
