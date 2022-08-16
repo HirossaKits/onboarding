@@ -1,7 +1,6 @@
 package validators
 
 import (
-	"fmt"
 	"io"
 )
 
@@ -14,19 +13,16 @@ type CreateUserParams struct {
 	Password string
 	Name     string
 }
-
-func ValidateGetUserParam(body *io.ReadCloser) (GetUserParams, error) {
-	params, err := ConvToStruct[GetUserParams](body)
-	// TODO:ここで何かしらのバリデーションを行う
-	return params, err
+type UpdateUserParams struct {
+	Name string
 }
 
 func ValidateCreateUserParam(body *io.ReadCloser) (CreateUserParams, error) {
-
-	fmt.Println(*body)
 	params, err := ConvToStruct[CreateUserParams](body)
-	fmt.Println("Hey!")
-	fmt.Println(params)
-	// TODO:ここで何かしらのバリデーションを行う
+	return params, err
+}
+
+func ValidateUpdateUserParam(body *io.ReadCloser) (UpdateUserParams, error) {
+	params, err := ConvToStruct[UpdateUserParams](body)
 	return params, err
 }

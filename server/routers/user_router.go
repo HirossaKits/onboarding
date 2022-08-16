@@ -18,5 +18,7 @@ func (*userRouter) Route(ctx *context.Context) *chi.Mux {
 	c := controllers.NewUserController()
 	r.Get("/{user_id}", c.GetUserById(ctx))
 	r.Post("/", c.CreateUser(ctx))
+	r.Put("/{user_id}", c.UpdateUser(ctx))
+	r.Delete("/{user_id}", c.DeleteUser(ctx))
 	return r
 }

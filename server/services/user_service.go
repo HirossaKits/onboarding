@@ -9,15 +9,15 @@ import (
 	"github.com/google/uuid"
 )
 
-func GetUserById(ctx *context.Context, client *ent.Client, params *validators.GetUserParams) (string, error) {
+func GetUserById(ctx *context.Context, client *ent.Client, user_id string) (*ent.User, error) {
 
-	user_id, _ := uuid.Parse(params.User_id)
+	uuid, _ := uuid.Parse(user_id)
 
 	user, err := client.User.
 		Query().
-		Where(user.ID(user_id)).
+		Where(user.ID(uuid)).
 		Select(user.FieldID, user.FieldName).
-		String(*ctx)
+		Only(*ctx)
 
 	return user, err
 }
@@ -32,4 +32,27 @@ func CreateUser(ctx *context.Context, client *ent.Client, params *validators.Cre
 		Save(*ctx)
 
 	return user, err
+}
+
+func UpdateUser(ctx *context.Context, client *ent.Client, user_id string, params *validators.UpdateUserParams) (*ent.User, error) {
+
+	uuid, _ := uuid.Parse(user_id)
+
+	user, err := client.User.
+		UpdateOneID(uuid).
+		SetName(params.Name).
+		Save(*ctx)
+
+	return user, err
+}
+
+func DeleteUser(ctx *context.Context, client *ent.Client, user_id string) error {
+
+	uuid, _ := uuid.Parse(user_id)
+
+	err := client.User.
+		DeleteOneID(uuid).
+		Exec(*ctx)
+
+	return err
 }

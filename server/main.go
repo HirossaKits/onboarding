@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"go-chi-api/db"
 	"go-chi-api/routers"
@@ -26,8 +25,6 @@ func New() *server {
 func (s *server) route() {
 
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
 
 	s.router.Route("/api", func(r chi.Router) {
 		userRouter := routers.NewUserRouter()
