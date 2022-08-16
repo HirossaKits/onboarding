@@ -53,4 +53,10 @@ Write schema and run below command
 go generate ./ent
 ```
 
-## Install mysql driver
+## Hot reload
+
+installation
+
+```shell
+go install github.com/cosmtrek/air@latest
+```

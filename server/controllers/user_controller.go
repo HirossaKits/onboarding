@@ -28,10 +28,19 @@ func (c *userControll) GetUserById(ctx *context.Context) func(w http.ResponseWri
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		params, err := validators.ValidateGetUserParam(&r.Body)
+
+		if err != nil {
+			w.WriteHeader(400)
+			// TODO: エラーメッセージ
+			w.Write([]byte(err.Error()))
+			return
+		}
+
 		user, err := services.GetUserById(ctx, c.client, &params)
 
 		if err != nil {
-			w.WriteHeader(404)
+			w.WriteHeader(500)
+			// TODO: エラーメッセージ
 			w.Write([]byte(err.Error()))
 			return
 		}
@@ -47,10 +56,19 @@ func (c *userControll) CreateUser(ctx *context.Context) func(w http.ResponseWrit
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		params, err := validators.ValidateCreateUserParam(&r.Body)
+
+		if err != nil {
+			w.WriteHeader(400)
+			// TODO: エラーメッセージ
+			w.Write([]byte(err.Error()))
+			return
+		}
+
 		user, err := services.CreateUser(ctx, c.client, &params)
 
 		if err != nil {
-			w.WriteHeader(404)
+			w.WriteHeader(500)
+			// TODO: エラーメッセージ
 			w.Write([]byte(err.Error()))
 			return
 		}
