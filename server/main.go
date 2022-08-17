@@ -27,8 +27,8 @@ func (s *server) route() {
 	ctx := context.Background()
 
 	s.router.Route("/api", func(r chi.Router) {
-		userRouter := routers.NewUserRouter()
-		r.Mount("/user", userRouter.Route(&ctx))
+		r.Mount("/user", routers.UserRoute(&ctx))
+		r.Mount("/todo", routers.TodoRoute(&ctx))
 	})
 }
 
