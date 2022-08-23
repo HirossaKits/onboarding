@@ -4,13 +4,23 @@ import (
 	"go-chi-api/ent"
 	"log"
 	"os"
+	"sync"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
+
+	"entgo.io/ent/dialect/sql"
 )
 
-func NewClient() *ent.Client {
+type store struct {
+	Client *ent.Client
+}
 
+var once sync.Once
+var instance *store
+
+func open() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatalf("failed loading env file: %v", err)
@@ -26,12 +36,25 @@ func NewClient() *ent.Client {
 		ParseTime:            true,
 	}
 
-	entOptions := []ent.Option{ent.Debug()}
+	// entOptions := []ent.Option{ent.Debug()}
+	// client, err := ent.Open("mysql", mc.FormatDSN(), entOptions...)
 
-	client, err := ent.Open("mysql", mc.FormatDSN(), entOptions...)
+	drv, err := sql.Open("mysql", mc.FormatDSN())
 	if err != nil {
 		log.Fatalf("failed connecting to mysql: %v", err)
 	}
 
-	return client
+	db := drv.DB()
+	db.SetMaxIdleConns(10)
+	db.SetMaxOpenConns(100)
+	db.SetConnMaxLifetime(time.Hour)
+
+	instance = &store{
+		Client: ent.NewClient(ent.Driver(drv)),
+	}
+}
+
+func GetInstance() *store {
+	once.Do(open)
+	return instance
 }

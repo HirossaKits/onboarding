@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"os"
@@ -23,12 +22,9 @@ func New() *server {
 }
 
 func (s *server) route() {
-
-	ctx := context.Background()
-
 	s.router.Route("/api", func(r chi.Router) {
-		r.Mount("/user", routers.UserRoute(&ctx))
-		r.Mount("/todo", routers.TodoRoute(&ctx))
+		r.Mount("/user", routers.UserRoute())
+		r.Mount("/todo", routers.TodoRoute())
 	})
 }
 

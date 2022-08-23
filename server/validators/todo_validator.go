@@ -1,28 +1,35 @@
 package validators
 
 import (
+	"go-chi-api/utils"
 	"io"
 )
 
-type GetTodoParams struct {
+type GetTodosParams struct {
 	User_id string
 }
 
 type CreateTodoParams struct {
-	Email    string
-	Password string
-	Name     string
+	User_id string
+	Title   string
+	Content string
 }
 type UpdateTodoParams struct {
-	Name string
+	Title   string
+	Content string
 }
 
-func ValidateCreateTodoParam(body *io.ReadCloser) (CreateUserParams, error) {
-	params, err := ConvToStruct[CreateUserParams](body)
+func ValidateGetTodosParam(body *io.ReadCloser) (GetTodosParams, error) {
+	params, err := utils.ConvToStruct[GetTodosParams](body)
 	return params, err
 }
 
-func ValidateUpdateTodoParam(body *io.ReadCloser) (UpdateUserParams, error) {
-	params, err := ConvToStruct[UpdateUserParams](body)
+func ValidateCreateTodoParam(body *io.ReadCloser) (CreateTodoParams, error) {
+	params, err := utils.ConvToStruct[CreateTodoParams](body)
+	return params, err
+}
+
+func ValidateUpdateTodoParam(body *io.ReadCloser) (UpdateTodoParams, error) {
+	params, err := utils.ConvToStruct[UpdateTodoParams](body)
 	return params, err
 }

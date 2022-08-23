@@ -3,47 +3,71 @@ package services
 import (
 	"context"
 	"go-chi-api/ent"
-	"go-chi-api/ent/user"
+	"go-chi-api/ent/todo"
 	"go-chi-api/validators"
 
 	"github.com/google/uuid"
 )
 
-func GetTodoById(ctx *context.Context, client *ent.Client, user_id string) (*ent.User, error) {
+func GetTodos(ctx *context.Context, client *ent.Client, params *validators.GetTodosParams) (*ent.Todo, error) {
 
-	uuid, _ := uuid.Parse(user_id)
+	uuid, _ := uuid.Parse(params.User_id)
 
-	user, err := client.User.
+	todo, err := client.Todo.
 		Query().
-		Where(user.ID(uuid)).
-		Select(user.FieldID, user.FieldName).
+		Where(todo.UserIDEQ(uuid)).
+		Select(todo.FieldID,
+			todo.FieldTitle,
+			todo.FieldContent,
+			todo.FieldCreatedAt,
+			todo.FieldCreatedAt).
 		Only(*ctx)
 
-	return user, err
+	return todo, err
 }
 
-func CreateTodo(ctx *context.Context, client *ent.Client, params *validators.CreateUserParams) (*ent.User, error) {
+func GetTodoById(ctx *context.Context, client *ent.Client, todo_id string) ([]*ent.Todo, error) {
 
-	user, err := client.User.
+	uuid, _ := uuid.Parse(todo_id)
+
+	todo, err := client.Todo.
+		Query().
+		Where(todo.ID(uuid)).
+		Select(todo.FieldID,
+			todo.FieldTitle,
+			todo.FieldContent,
+			todo.FieldCreatedAt,
+			todo.FieldCreatedAt).
+		All(*ctx)
+
+	return todo, err
+}
+
+func CreateTodo(ctx *context.Context, client *ent.Client, params *validators.CreateTodoParams) (*ent.Todo, error) {
+
+	uuid, _ := uuid.Parse(params.User_id)
+
+	todo, err := client.Todo.
 		Create().
-		SetEmail(params.Email).
-		SetPassword(params.Password).
-		SetName(params.Name).
+		SetUserID(uuid).
+		SetTitle(params.Title).
+		SetContent(params.Content).
 		Save(*ctx)
 
-	return user, err
+	return todo, err
 }
 
-func UpdateTodo(ctx *context.Context, client *ent.Client, user_id string, params *validators.UpdateUserParams) (*ent.User, error) {
+func UpdateTodo(ctx *context.Context, client *ent.Client, todo_id string, params *validators.UpdateTodoParams) (*ent.Todo, error) {
 
-	uuid, _ := uuid.Parse(user_id)
+	uuid, _ := uuid.Parse(todo_id)
 
-	user, err := client.User.
+	todo, err := client.Todo.
 		UpdateOneID(uuid).
-		SetName(params.Name).
+		SetTitle(params.Title).
+		SetContent(params.Content).
 		Save(*ctx)
 
-	return user, err
+	return todo, err
 }
 
 func DeleteTodo(ctx *context.Context, client *ent.Client, user_id string) error {

@@ -1,6 +1,7 @@
 package validators
 
 import (
+	"go-chi-api/utils"
 	"io"
 )
 
@@ -18,11 +19,11 @@ type UpdateUserParams struct {
 }
 
 func ValidateCreateUserParam(body *io.ReadCloser) (CreateUserParams, error) {
-	params, err := ConvToStruct[CreateUserParams](body)
+	params, err := utils.ConvToStruct[CreateUserParams](body)
 	return params, err
 }
 
 func ValidateUpdateUserParam(body *io.ReadCloser) (UpdateUserParams, error) {
-	params, err := ConvToStruct[UpdateUserParams](body)
+	params, err := utils.ConvToStruct[UpdateUserParams](body)
 	return params, err
 }
