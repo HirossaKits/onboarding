@@ -60,3 +60,18 @@ installation
 ```shell
 go install github.com/cosmtrek/air@latest
 ```
+
+## Architecture
+
+```mermaid
+
+classDiagram
+
+  class DB{
+
+  }
+  class Service{
+
+  }
+
+```
