@@ -65,13 +65,12 @@ go install github.com/cosmtrek/air@latest
 
 ```mermaid
 
-classDiagram
+flowchart
 
-  class DB{
+Routes --> Middlewares --> Controllers --> Services --> db[(Database)]
+Routes --> Controllers
+Controllers --> Validators
+Services --> Validators
 
-  }
-  class Service{
-
-  }
 
 ```
