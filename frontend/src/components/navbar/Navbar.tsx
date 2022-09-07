@@ -16,7 +16,8 @@ import {
   useColorMode,
   Center,
 } from '@chakra-ui/react';
-import { MoonIcon, SunIcon } from '@chakra-ui/icons';
+// import { MoonIcon, SunIcon } from '@chakra-ui/icons';
+import { FiMoon, FiSun } from 'react-icons/fi';
 
 const NavLink = ({ children }: { children: ReactNode }) => (
   <Link
@@ -44,18 +45,14 @@ export default function Nav() {
 
           <Flex alignItems={'center'}>
             <Stack direction={'row'} spacing={7}>
-              <Button onClick={toggleColorMode}>
-                {colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
-              </Button>
-
               <Menu>
-                <MenuButton
+                {/* <MenuButton
                   as={Button}
                   rounded={'full'}
                   variant={'link'}
                   cursor={'pointer'}
                   minW={0}
-                ></MenuButton>
+                ></MenuButton> */}
                 <MenuList alignItems={'center'}>
                   <br />
                   <Center>
